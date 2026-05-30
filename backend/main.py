@@ -126,7 +126,7 @@ def analyze_resume(data: ResumeRequest):
         "keywordMatches": keywords,
         "suggestions": suggestions
     }
-    @app.get("/test-gemini")
+@app.get("/test-gemini")
 def test_gemini():
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
