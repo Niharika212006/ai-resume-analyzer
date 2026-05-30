@@ -143,3 +143,12 @@ def test_gemini():
         return {
             "error": str(e)
         }
+@app.get("/models")
+def list_models():
+    try:
+        models = []
+        for model in genai.list_models():
+            models.append(model.name)
+        return {"models": models}
+    except Exception as e:
+        return {"error": str(e)}
