@@ -129,7 +129,7 @@ def analyze_resume(data: ResumeRequest):
 @app.get("/test-gemini")
 def test_gemini():
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
 
         response = model.generate_content(
             "Say hello to Niharika in one sentence."
