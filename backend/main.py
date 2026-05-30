@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from groq import Groq
 load_dotenv()
 print("API KEY =", os.getenv("GEMINI_API_KEY"))
 app = FastAPI()
@@ -152,3 +153,28 @@ def list_models():
         return {"models": models}
     except Exception as e:
         return {"error": str(e)}
+@app.get("/test-groq")
+def test_groq():
+    try:
+        client = Groq(
+            api_key=os.getenv("GROQ_API_KEY")
+        )
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Say hello to Niharika in one sentence."
+                }
+            ]
+        )
+
+        return {
+            "response": response.choices[0].message.content
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
