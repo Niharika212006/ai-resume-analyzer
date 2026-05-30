@@ -8,12 +8,14 @@ print("API KEY =", os.getenv("GEMINI_API_KEY"))
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://ai-resume-analyzer-seven-amber-32.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 @app.get("/")
 def home():
