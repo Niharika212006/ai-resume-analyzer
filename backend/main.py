@@ -126,3 +126,20 @@ def analyze_resume(data: ResumeRequest):
         "keywordMatches": keywords,
         "suggestions": suggestions
     }
+    @app.get("/test-gemini")
+def test_gemini():
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        response = model.generate_content(
+            "Say hello to Niharika in one sentence."
+        )
+
+        return {
+            "response": response.text
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
