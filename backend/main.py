@@ -1,12 +1,16 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from dotenv import load_dotenv
+from groq import Groq
 import google.generativeai as genai
 import os
-from fastapi.middleware.cors import CORSMiddleware
-from groq import Groq
+import json
+
 load_dotenv()
-print("API KEY =", os.getenv("GEMINI_API_KEY"))
+
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -18,115 +22,125 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def home():
-    return {"message": "AI Resume Analyzer Backend Running"}
-from fastapi import FastAPI
-from pydantic import BaseModel
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 class ResumeRequest(BaseModel):
     resumeText: str
+    jobRole: str
+
+
+@app.get("/")
+def home():
+    return {"message": "AI Resume Analyzer Backend Running"}
+
 
 @app.post("/analyze")
 def analyze_resume(data: ResumeRequest):
+    try:
+        client = Groq(
+            api_key=os.getenv("GROQ_API_KEY")
+        )
 
-    text = data.resumeText.lower()
+        prompt = f"""
+You are an expert ATS (Applicant Tracking System) resume reviewer used by top tech companies.
+Target Job Role: {data.jobRole}
+Analyze the resume carefully and realistically.
 
-    score = 50
+Scoring Rules:
+- ATS Score must be between 0 and 100.
+- Do NOT give extremely low scores unless the resume is truly poor.
+- Consider:
+  * Education
+  * Skills
+  * Projects
+  * Internships / Experience
+  * Certifications
+  * Achievements
+  * Resume Structure
+  * Technical Keywords
+  * Impact and Quantified Results
+For the selected job role:
 
-    keywords = []
+- Evaluate how well the resume matches the role.
+- Mention role-specific strengths.
+- Mention role-specific weaknesses.
+- Mention missing skills important for this role.
+- Give suggestions specifically for this role.
 
-    tech_keywords = [
-        "python",
-        "java",
-        "react",
-        "git",
-        "fastapi",
-        "sql",
-        "javascript",
-        "html",
-        "css",
-        "machine learning",
-        "ai"
-    ]
+Score Guidelines:
+- 90-100 = Outstanding resume, interview-ready.
+- 80-89 = Strong resume with minor improvements needed.
+- 70-79 = Good resume but missing some important elements.
+- 60-69 = Average resume requiring improvements.
+- Below 60 = Weak resume with major gaps.
 
-    for keyword in tech_keywords:
-        if keyword in text:
-            keywords.append(keyword.title())
-            score += 4
+IMPORTANT:
+Do not write any explanation.
+Do not write any text before or after the JSON.
+Return ONLY a JSON object.
 
-    word_count = len(data.resumeText.split())
+{{
+    "atsScore": 0,
+    "potentialScore": 0,
+    "summary": "",
+    "strengths": [],
+    "weaknesses": [],
+    "missingKeywords": [],
+    "suggestions": []
+}}
 
-    if "project" in text:
-        score += 5
+Rules:
+- summary is REQUIRED.
+- summary must contain 2-3 professional sentences.
+- Do not leave summary empty.
+- Do not omit any field.
 
-    if "internship" in text:
-        score += 5
+Requirements:
+- Provide 4-6 strengths.
+- Provide 3-5 weaknesses.
+- Provide 5-10 missing keywords important for the selected role.
+- Provide 5 actionable suggestions.
+- potentialScore must be greater than atsScore.
+- ATS score should be realistic and consistent with the resume quality.
+- Every field in the JSON must be present.
 
-    if "github" in text:
-        score += 3
+Resume:
 
-    if "skills" in text:
-        score += 3
+{data.resumeText}
+"""
 
-    if "education" in text:
-        score += 3
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
 
-    if "experience" in text:
-        score += 5
+        result = response.choices[0].message.content
 
-    if word_count > 100:
-        score += 10
+        result = result.replace("```json", "")
+        result = result.replace("```", "")
+        result = result.strip()
 
-    if word_count > 200:
-        score += 10
+        start = result.find("{")
+        end = result.rfind("}") + 1
 
-    score = min(score, 100)
+        json_text = result[start:end]
 
-    if score >= 85:
-        grade = "A"
-    elif score >= 70:
-        grade = "B"
-    elif score >= 55:
-        grade = "C"
-    else:
-        grade = "D"
+        analysis = json.loads(json_text)
 
-    suggestions = []
-    if "project" not in text:
-        suggestions.append("Add project details.")
-        
-    if "skills" not in text:
-        suggestions.append("Add a dedicated Skills section.")
+        return analysis
 
-    if "education" not in text:
-        suggestions.append("Add your Education section.")
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
-    if "experience" not in text:
-        suggestions.append("Add your Experience section.")
 
-    if "certification" not in text and "certifications" not in text:
-        suggestions.append("Add certifications to strengthen your resume.")
-
-    if "internship" not in text:
-        suggestions.append("Mention internships or practical experience.")
-
-    if "github" not in text:
-        suggestions.append("Add your GitHub profile.")
-
-    if "achievement" not in text:
-        suggestions.append("Mention measurable achievements.")
-
-    if len(suggestions) == 0:
-        suggestions.append("Great resume. Keep improving your project portfolio.")
-
-    return {
-        "grade": grade,
-        "score": score,
-        "wordCount": word_count,
-        "keywordMatches": keywords,
-        "suggestions": suggestions
-    }
 @app.get("/test-gemini")
 def test_gemini():
     try:
@@ -144,15 +158,26 @@ def test_gemini():
         return {
             "error": str(e)
         }
+
+
 @app.get("/models")
 def list_models():
     try:
         models = []
+
         for model in genai.list_models():
             models.append(model.name)
-        return {"models": models}
+
+        return {
+            "models": models
+        }
+
     except Exception as e:
-        return {"error": str(e)}
+        return {
+            "error": str(e)
+        }
+
+
 @app.get("/test-groq")
 def test_groq():
     try:

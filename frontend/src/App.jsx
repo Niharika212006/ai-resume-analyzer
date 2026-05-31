@@ -4,7 +4,8 @@ import ResumeInput from "./components/ResumeInput";
 import AnalysisResults from "./components/AnalysisResults";
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-
+import mammoth from "mammoth"
+import { jsPDF } from "jspdf"
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 const KEYWORDS = [
   'machine learning',
@@ -32,6 +33,7 @@ function App() {
   const [resumeText, setResumeText] = useState('')
   const [analysis, setAnalysis] = useState(null)
   const [message, setMessage] = useState('Paste your resume text or upload a .txt file to get AI-powered insights.')
+  const [jobRole, setJobRole] = useState('Software Engineer')
 
 const handleAnalyze = async () => {
   if (!resumeText.trim()) {
@@ -43,13 +45,15 @@ const handleAnalyze = async () => {
   try {
     setMessage('Analyzing resume...')
 
-    const response = await fetch('https://ai-resume-analyzer-fvm4.onrender.com/analyze', {
+    const response = await fetch(
+  'http://127.0.0.1:8000/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         resumeText: resumeText,
+        jobRole: jobRole,
       }),
     })
 
@@ -66,6 +70,7 @@ const handleAnalyze = async () => {
     setAnalysis(null)
   }
 }
+
 
 const handleFile = async (event) => {
   const file = event.target.files?.[0]
@@ -100,7 +105,24 @@ const handleFile = async (event) => {
 
     return
   }
+if (
+  file.type ===
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+) {
+  const arrayBuffer = await file.arrayBuffer()
 
+  const result = await mammoth.extractRawText({
+    arrayBuffer,
+  })
+
+  setResumeText(result.value)
+
+  setMessage("DOCX resume loaded successfully.")
+
+  setAnalysis(null)
+
+  return
+}
   const reader = new FileReader()
 
   reader.onload = () => {
@@ -109,9 +131,50 @@ const handleFile = async (event) => {
     setAnalysis(null)
   }
 
-  reader.readAsText(file)
+reader.readAsText(file)
 }
 
+const downloadReport = () => {
+  if (!analysis) return
+
+  const doc = new jsPDF()
+
+  doc.setFontSize(18)
+  doc.text("AI Resume Analysis Report", 20, 20)
+
+  doc.setFontSize(12)
+
+  doc.text(
+    `Current ATS Score: ${analysis.atsScore}%`,
+    20,
+    40
+  )
+
+  doc.text(
+    `Potential ATS Score: ${analysis.potentialScore}%`,
+    20,
+    50
+  )
+
+  doc.text(
+    `Improvement Potential: +${
+      analysis.potentialScore - analysis.atsScore
+    }`,
+    20,
+    60
+  )
+
+  doc.text("Professional Summary:", 20, 80)
+
+  const summaryLines = doc.splitTextToSize(
+    analysis.summary || "",
+    170
+  )
+
+  doc.text(summaryLines, 20, 90)
+
+  doc.save("ATS_Report.pdf")
+}
   const previewText = useMemo(() => {
     if (!resumeText.trim()) return 'Your resume preview will appear here once you paste or upload it.'
     return resumeText.length > 600 ? `${resumeText.slice(0, 600)}…` : resumeText
@@ -120,6 +183,27 @@ const handleFile = async (event) => {
   return (
     <div style={styles.page}>
       <Header />
+      <div style={{ marginBottom: '20px' }}>
+  <label>
+    Target Role:
+  </label>
+
+  <select
+    value={jobRole}
+    onChange={(e) => setJobRole(e.target.value)}
+    style={{
+      marginLeft: '10px',
+      padding: '8px'
+    }}
+  >
+    <option>Software Engineer</option>
+    <option>AI/ML Engineer</option>
+    <option>Frontend Developer</option>
+    <option>Backend Developer</option>
+    <option>Data Analyst</option>
+    <option>Java Developer</option>
+  </select>
+</div>
       <ResumeInput
   resumeText={resumeText}
   setResumeText={setResumeText}
@@ -128,14 +212,29 @@ const handleFile = async (event) => {
   handleAnalyze={handleAnalyze}
   message={message}
   styles={styles}
-/>
-<main style={styles.main}>
+/><main style={styles.main}>
   <AnalysisResults
-  analysis={analysis}
-  previewText={previewText}
-  styles={styles}
-/>
-      </main>
+    analysis={analysis}
+    previewText={previewText}
+    styles={styles}
+  />
+
+  {analysis && (
+    <button
+      onClick={downloadReport}
+      style={{
+        marginTop: "20px",
+        padding: "12px 20px",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+      }}
+    >
+      Download ATS Report
+    </button>
+  )}
+</main>
+
     </div>
   )
 }
