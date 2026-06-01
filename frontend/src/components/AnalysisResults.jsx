@@ -44,6 +44,26 @@ function AnalysisResults({
             </p>
           </div>
 
+        <div style={styles.suggestions}>
+          <p style={styles.suggestionsTitle}>
+            Resume Match Score
+          </p>
+
+          <h3>
+            {analysis.matchScore || 0}%
+          </h3>
+        </div>
+        <div style={styles.suggestions}>
+          <p style={styles.suggestionsTitle}>
+            Matching Skills
+          </p>
+
+          <ul>
+            {analysis.matchingSkills?.map((item, index) => (
+              <li key={index}>{item}</li>
+    ))}
+          </ul>
+      </div>
           <div style={styles.suggestions}>
             <p style={styles.suggestionsTitle}>Strengths</p>
 
@@ -63,7 +83,18 @@ function AnalysisResults({
               ))}
             </ul>
           </div>
+          
+          <div style={styles.suggestions}>
+            <p style={styles.suggestionsTitle}>
+              Missing Skills
+            </p>
 
+            <ul>
+              {analysis.missingSkills?.map((item, index) => (
+              <li key={index}>{item}</li>
+    ))}
+            </ul>
+          </div>
           <div style={styles.suggestions}>
             <p style={styles.suggestionsTitle}>Missing Keywords</p>
 

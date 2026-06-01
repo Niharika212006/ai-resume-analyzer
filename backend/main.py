@@ -28,7 +28,7 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 class ResumeRequest(BaseModel):
     resumeText: str
     jobRole: str
-
+    jobDescription: str = ""
 
 @app.get("/")
 def home():
@@ -68,6 +68,14 @@ For the selected job role:
 - Mention missing skills important for this role.
 - Give suggestions specifically for this role.
 
+If a Job Description is provided:
+
+- Compare the resume against the job description.
+- Calculate a matchScore between 0 and 100.
+- Identify matchingSkills from the resume.
+- Identify missingSkills that appear important in the job description but are absent from the resume.
+- Give suggestions to improve the match score.
+
 Score Guidelines:
 - 90-100 = Outstanding resume, interview-ready.
 - 80-89 = Strong resume with minor improvements needed.
@@ -83,9 +91,12 @@ Return ONLY a JSON object.
 {{
     "atsScore": 0,
     "potentialScore": 0,
+    "matchScore": 0,
     "summary": "",
     "strengths": [],
     "weaknesses": [],
+    "matchingSkills": [],
+    "missingSkills": [],
     "missingKeywords": [],
     "suggestions": []
 }}
@@ -108,6 +119,10 @@ Requirements:
 Resume:
 
 {data.resumeText}
+
+Job Description:
+
+{data.jobDescription}
 """
 
         response = client.chat.completions.create(

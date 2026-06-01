@@ -32,6 +32,7 @@ function getKeywordMatches(text) {
 function App() {
   const [resumeText, setResumeText] = useState('')
   const [analysis, setAnalysis] = useState(null)
+  const [jobDescription, setJobDescription] = useState('')
   const [message, setMessage] = useState('Paste your resume text or upload a .txt file to get AI-powered insights.')
   const [jobRole, setJobRole] = useState('Software Engineer')
 
@@ -54,6 +55,7 @@ const handleAnalyze = async () => {
       body: JSON.stringify({
         resumeText: resumeText,
         jobRole: jobRole,
+        jobDescription: jobDescription,
       }),
     })
 
@@ -139,39 +141,128 @@ const downloadReport = () => {
 
   const doc = new jsPDF()
 
+  let y = 20
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
   doc.setFontSize(18)
-  doc.text("AI Resume Analysis Report", 20, 20)
+  doc.text("AI Resume Analysis Report", 20, y)
+
+  y += 15
 
   doc.setFontSize(12)
 
   doc.text(
     `Current ATS Score: ${analysis.atsScore}%`,
     20,
-    40
+    y
   )
+
+  y += 10
 
   doc.text(
     `Potential ATS Score: ${analysis.potentialScore}%`,
     20,
-    50
+    y
   )
+
+  y += 10
 
   doc.text(
     `Improvement Potential: +${
       analysis.potentialScore - analysis.atsScore
-    }`,
+    } points`,
     20,
-    60
+    y
   )
 
-  doc.text("Professional Summary:", 20, 80)
+  y += 20
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
+  doc.setFontSize(14)
+  doc.text("Professional Summary", 20, y)
+
+  y += 10
+
+  doc.setFontSize(12)
 
   const summaryLines = doc.splitTextToSize(
     analysis.summary || "",
     170
   )
 
-  doc.text(summaryLines, 20, 90)
+  doc.text(summaryLines, 20, y)
+
+  y += summaryLines.length * 7 + 10
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
+  doc.setFontSize(14)
+  doc.text("Strengths", 20, y)
+
+  y += 10
+
+  doc.setFontSize(12)
+
+  analysis.strengths?.forEach((item) => {
+    doc.text(`• ${item}`, 25, y)
+    y += 8
+  })
+
+  y += 5
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
+  doc.setFontSize(14)
+  doc.text("Weaknesses", 20, y)
+
+  y += 10
+
+  doc.setFontSize(12)
+
+  analysis.weaknesses?.forEach((item) => {
+    doc.text(`• ${item}`, 25, y)
+    y += 8
+  })
+
+  y += 5
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
+  doc.setFontSize(14)
+  doc.text("Missing Keywords", 20, y)
+
+  y += 10
+
+  doc.setFontSize(12)
+
+  analysis.missingKeywords?.forEach((item) => {
+    doc.text(`• ${item}`, 25, y)
+    y += 8
+  })
+
+  y += 5
+  if (y > 250) {
+  doc.addPage()
+  y = 20
+}
+  doc.setFontSize(14)
+  doc.text("Suggestions", 20, y)
+
+  y += 10
+
+  doc.setFontSize(12)
+
+  analysis.suggestions?.forEach((item) => {
+    doc.text(`• ${item}`, 25, y)
+    y += 8
+  })
 
   doc.save("ATS_Report.pdf")
 }
@@ -203,6 +294,24 @@ const downloadReport = () => {
     <option>Data Analyst</option>
     <option>Java Developer</option>
   </select>
+</div>
+<div style={{ marginBottom: '20px' }}>
+  <label>
+    Job Description:
+  </label>
+
+  <textarea
+    value={jobDescription}
+    onChange={(e) => setJobDescription(e.target.value)}
+    placeholder="Paste job description here..."
+    style={{
+      width: '100%',
+      minHeight: '150px',
+      marginTop: '10px',
+      padding: '10px',
+      borderRadius: '8px',
+    }}
+  />
 </div>
       <ResumeInput
   resumeText={resumeText}
