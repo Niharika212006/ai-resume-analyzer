@@ -35,6 +35,7 @@ function App() {
   const [jobDescription, setJobDescription] = useState('')
   const [message, setMessage] = useState('Paste your resume text or upload a .txt file to get AI-powered insights.')
   const [jobRole, setJobRole] = useState('Software Engineer')
+  const [loading, setLoading] = useState(false)
 
 const handleAnalyze = async () => {
   if (!resumeText.trim()) {
@@ -42,6 +43,7 @@ const handleAnalyze = async () => {
     setAnalysis(null)
     return
   }
+  setLoading(true)
 
   try {
     setMessage('Analyzing resume...')
@@ -62,7 +64,7 @@ const handleAnalyze = async () => {
     const data = await response.json()
 
     setAnalysis(data)
-
+    setLoading(false)
     setMessage(
       'Resume analysis complete. Review the score and suggestions below.'
     )
@@ -70,6 +72,7 @@ const handleAnalyze = async () => {
     console.error(error)
     setMessage('Failed to connect to backend.')
     setAnalysis(null)
+    setLoading(false)
   }
 }
 
@@ -78,7 +81,6 @@ const handleFile = async (event) => {
   const file = event.target.files?.[0]
   console.log(file.type)
   if (!file) return
-
   if (file.type === 'application/pdf') {
     const arrayBuffer = await file.arrayBuffer()
 
@@ -146,8 +148,28 @@ const downloadReport = () => {
   doc.addPage()
   y = 20
 }
-  doc.setFontSize(18)
-  doc.text("AI Resume Analysis Report", 20, y)
+  doc.setFontSize(20)
+doc.text("AI Resume Analyzer", 20, y)
+
+y += 10
+
+doc.setFontSize(12)
+
+doc.text(
+  `Generated: ${new Date().toLocaleDateString()}`,
+  20,
+  y
+)
+
+y += 10
+
+doc.text(
+  `Target Role: ${jobRole}`,
+  20,
+  y
+)
+
+y += 15
 
   y += 15
 
@@ -168,7 +190,12 @@ const downloadReport = () => {
   )
 
   y += 10
-
+  doc.text(
+  `Resume Match Score: ${analysis.matchScore || 0}%`,
+  20,
+  y
+)
+y += 10
   doc.text(
     `Improvement Potential: +${
       analysis.potentialScore - analysis.atsScore
@@ -322,6 +349,25 @@ const downloadReport = () => {
   message={message}
   styles={styles}
 /><main style={styles.main}>
+  {loading && (
+  <div
+    style={{
+      padding: "20px",
+      marginBottom: "20px",
+      borderRadius: "12px",
+      background: "#eff6ff",
+      fontWeight: "bold",
+    }}
+  >
+    🤖 Reading Resume...
+    <br />
+    📊 Calculating ATS Score...
+    <br />
+    🔍 Matching with Job Description...
+    <br />
+    📝 Generating Suggestions...
+  </div>
+)}
   <AnalysisResults
     analysis={analysis}
     previewText={previewText}

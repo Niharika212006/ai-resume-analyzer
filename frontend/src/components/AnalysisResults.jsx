@@ -49,9 +49,25 @@ function AnalysisResults({
             Resume Match Score
           </p>
 
-          <h3>
-            {analysis.matchScore || 0}%
-          </h3>
+          <h3
+  style={{
+    color:
+      analysis.matchScore >= 85
+        ? "green"
+        : analysis.matchScore >= 70
+        ? "orange"
+        : "red",
+  }}
+>
+  {analysis.matchScore || 0}%
+</h3>
+<p>
+  {analysis.matchScore >= 85
+    ? "Excellent Match"
+    : analysis.matchScore >= 70
+    ? "Good Match"
+    : "Weak Match"}
+</p>
         </div>
         <div style={styles.suggestions}>
           <p style={styles.suggestionsTitle}>
