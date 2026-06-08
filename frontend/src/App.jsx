@@ -49,7 +49,7 @@ const handleAnalyze = async () => {
     setMessage('Analyzing resume...')
 
     const response = await fetch(
-  'http://127.0.0.1:8000/analyze', {
+  'https://ai-resume-analyzer-fvm4.onrender.com/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
