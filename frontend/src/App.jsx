@@ -33,7 +33,9 @@ function App() {
   const [resumeText, setResumeText] = useState('')
   const [analysis, setAnalysis] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
-  const [message, setMessage] = useState('Paste your resume text or upload a .txt file to get AI-powered insights.')
+  const [message, setMessage] = useState(
+  'Upload your resume or paste it above to receive AI-powered ATS analysis, skill matching, and improvement suggestions.'
+)
   const [jobRole, setJobRole] = useState('Software Engineer')
   const [loading, setLoading] = useState(false)
 
@@ -131,7 +133,9 @@ if (
 
   reader.onload = () => {
     setResumeText(reader.result ?? '')
-    setMessage('Resume loaded. Click Analyze to see AI insights.')
+    setMessage(
+  'Resume loaded successfully. Click Analyze to receive ATS analysis and personalized feedback.'
+)
     setAnalysis(null)
   }
 
@@ -293,6 +297,7 @@ y += 10
 
   doc.save("ATS_Report.pdf")
 }
+window.downloadReport = downloadReport
   const previewText = useMemo(() => {
     if (!resumeText.trim()) return 'Your resume preview will appear here once you paste or upload it.'
     return resumeText.length > 600 ? `${resumeText.slice(0, 600)}…` : resumeText
@@ -306,21 +311,19 @@ y += 10
     Target Role:
   </label>
 
-  <select
-    value={jobRole}
-    onChange={(e) => setJobRole(e.target.value)}
-    style={{
-      marginLeft: '10px',
-      padding: '8px'
-    }}
-  >
-    <option>Software Engineer</option>
-    <option>AI/ML Engineer</option>
-    <option>Frontend Developer</option>
-    <option>Backend Developer</option>
-    <option>Data Analyst</option>
-    <option>Java Developer</option>
-  </select>
+  <input
+  type="text"
+  value={jobRole}
+  onChange={(e) => setJobRole(e.target.value)}
+  placeholder="e.g. AI Engineer, Data Scientist, DevOps Engineer"
+  style={{
+    marginLeft: '10px',
+    padding: '8px',
+    width: '300px',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+  }}
+/>
 </div>
 <div style={{ marginBottom: '20px' }}>
   <label>
@@ -374,20 +377,7 @@ y += 10
     styles={styles}
   />
 
-  {analysis && (
-    <button
-      onClick={downloadReport}
-      style={{
-        marginTop: "20px",
-        padding: "12px 20px",
-        border: "none",
-        borderRadius: "8px",
-        cursor: "pointer",
-      }}
-    >
-      Download ATS Report
-    </button>
-  )}
+  
 </main>
 
     </div>
